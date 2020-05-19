@@ -1,17 +1,16 @@
 'use strict';
 
-const createField = (m, n) => {
-  const arr = [];
+
+const createField = (m, n, arr = []) => {
   for (let i = 0; i < m; i++) {
-  	arr.push([]);
-    for (let j = 0; j < n; j++) {
-      arr[i].push(0);
-    }
+    arr.push(new Array(n).fill(0));
   }
   return arr;
 };
 
-class Game {
+
+
+class MovementsPiece {
   
   score = 0;
   
@@ -31,7 +30,9 @@ class Game {
     ],
   };
 
-  checkConditions() {
+  
+
+  checkErrors() {
     const playfield = this.playfield;
     const {x, y, blocks} = this.activePiece;
     for (let Y = 0; Y < blocks.length; Y++) {
@@ -50,7 +51,7 @@ class Game {
   
   movePieceDown() {
     this.activePiece.y += 1;
-    if (this.checkConditions()) {
+    if (this.checkErrors()) {
       this.activePiece.y -= 1;
       this.closePieceInField();
     }
@@ -58,14 +59,14 @@ class Game {
 
   movePieceRight() {
     this.activePiece.x += 1;
-    if (this.checkConditions()) {
+    if (this.checkErrors()) {
       this.activePiece.x -= 1;
     }
   }
 
   movePieceLeft() {
     this.activePiece.x -=1;
-    if (this.checkConditions()) {
+    if (this.checkErrors()) {
       this.activePiece.x += 1;
     }
   };
@@ -79,7 +80,7 @@ class Game {
       }
     }
     this.activePiece.blocks = newBlock;
-    if (this.checkConditions()) {
+    if (this.checkErrors()) {
       this.activePiece.blocks = blocks;
     }
   }
@@ -89,51 +90,123 @@ class Game {
     for (let Y = 0; Y < blocks.length; Y++) {
       for (let X = 0; X < blocks[Y].length; X++) {
       	  if (blocks[Y][X] == 1)
-          this.playfield[y + Y][x + X] = blocks[Y][X];
+          this.playfield[y + Y][x + X] = '⛔';
+          //this.playfield[y + Y][x + X] = blocks[Y][X];
       }
     };
+    this.activePiece.y = 0;
+    this.activePiece.x = 0;
   };
 };
 
 
-const tetra = new Game();
 
-/*const obj = [
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-  [0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-  [1, 1, 1, 0, 0, 0, 0, 0, 0, 0],
-]; */
+const tetra = new MovementsPiece();
+
+const createGaps = (n) => {
+  let gap = '';
+  for (let i = 0; i < n-1; i++) {
+    gap += ' '; 
+  }
+  return gap;
+}
+
+const showField = () => {
+  const field = `
+                     ⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛                    ⬛
+                     ⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛
+  `
+  return field;
+}
+
+const showPiece = () => {
+  let {x, y, blocks} = tetra.activePiece;
+    for (let Y = 0; Y < blocks.length; Y++) {
+      for (let X = 0; X < blocks[Y].length; X++) {
+        if (blocks[Y][X] == 1) {
+          const xCoor = 28 + x + X;
+          const yCoor = 3 + y + Y;
+          console.log(`\x1b[${yCoor};${xCoor}H` + '▮');        
+        }
+    }
+  };
+}
+
+const fn = () => {
+  console.clear();
+  tetra.movePieceDown();
+  console.log(showField());
+  showPiece();    
+  console.log('\x1b[25;10H');
+}
+
+setInterval(fn, 1000);
 
 
 
-tetra.turnPiece();
-console.log(tetra.activePiece.blocks);
+/*const readline = require('readline');
 
-tetra.movePieceLeft();
-tetra.turnPiece();
-console.log(tetra.activePiece.blocks);
+process.stdin.setRawMode(true);
+//process.stdin.setEncoding('utf8');
+process.stdin.on('data', c => {
+  if (c == '\u0003') {
+    console.log('SIGINT');
+    process.exit();
+  }
+  if (c == '\u001b') {
+    console.log('GG');
+    process.exit();
+  }
+  console.log('got', c);
+})
+*/
 
-tetra.turnPiece();
-console.log(tetra.activePiece.blocks);
+/*const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout,
+});
 
-tetra.turnPiece();
-console.log(tetra.activePiece.blocks);
+rl.question( name => {
+  console.log('Hey');
+  rl.close;
+});
+*/
 
-// console.log(tetra);
+
+
+const FIGURES = `
+🐧🐧🐧🐧
+
+🐧🐧🐧
+🐧
+
+🐧🐧🐧
+  🐧
+
+🐧🐧
+🐧🐧
+
+🐧🐧
+  🐧🐧
+`;
+
