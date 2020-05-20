@@ -1,5 +1,14 @@
 'use strict';
 
+const typeFigures = {};
+
+const shapeFigures = ['🆗', '🆘', '🆚', '🆔'];
+
+const randomFrom0To3 = () => {
+  const result = Math.floor((Math.random() * 4)); 
+  return result;
+};
+
 
 const createField = (m, n, arr = []) => {
   for (let i = 0; i < m; i++) {
@@ -18,7 +27,9 @@ class MovementsPiece {
   
   level = 0;
   
-  playfield = createField(20, 10);
+  playfield = createField(20, 20);
+
+  activeShapeFigure = shapeFigures[randomFrom0To3()];
   
   activePiece = {
     x: 0,
@@ -39,8 +50,8 @@ class MovementsPiece {
       for (let X = 0; X < blocks[Y].length; X++) {
         if (
         	blocks[Y][X] &&
-        	((playfield[y + Y] === undefined || playfield[y + Y][x + X] === undefined) ||
-        	playfield[y + Y][x + X])
+        	((playfield[y + Y] === undefined || playfield[y + Y][x + 2*X] === undefined) ||
+        	playfield[y + Y][x + 2*X])
         ) {
           return true;
         }
@@ -58,16 +69,16 @@ class MovementsPiece {
   }
 
   movePieceRight() {
-    this.activePiece.x += 1;
+    this.activePiece.x += 2;
     if (this.checkErrors()) {
-      this.activePiece.x -= 1;
+      this.activePiece.x -= 2;
     }
   }
 
   movePieceLeft() {
-    this.activePiece.x -=1;
+    this.activePiece.x -= 2;
     if (this.checkErrors()) {
-      this.activePiece.x += 1;
+      this.activePiece.x += 2;
     }
   };
 
@@ -90,12 +101,12 @@ class MovementsPiece {
     for (let Y = 0; Y < blocks.length; Y++) {
       for (let X = 0; X < blocks[Y].length; X++) {
       	  if (blocks[Y][X] == 1)
-          this.playfield[y + Y][x + X] = '⛔';
-          //this.playfield[y + Y][x + X] = blocks[Y][X];
+          this.playfield[y + Y][x + 2*X] = blocks[Y][X];
       }
     };
     this.activePiece.y = 0;
     this.activePiece.x = 0;
+    tetra.activeShapeFigure = shapeFigures[randomFrom0To3()];
   };
 };
 
@@ -103,13 +114,6 @@ class MovementsPiece {
 
 const tetra = new MovementsPiece();
 
-const createGaps = (n) => {
-  let gap = '';
-  for (let i = 0; i < n-1; i++) {
-    gap += ' '; 
-  }
-  return gap;
-}
 
 const showField = () => {
   const field = `
@@ -136,52 +140,84 @@ const showField = () => {
                      ⬛                    ⬛
                      ⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛
   `
-  return field;
+  console.log(field);
 }
 
 const showPiece = () => {
+  const shapeFigure = tetra.activeShapeFigure;
   let {x, y, blocks} = tetra.activePiece;
     for (let Y = 0; Y < blocks.length; Y++) {
       for (let X = 0; X < blocks[Y].length; X++) {
         if (blocks[Y][X] == 1) {
-          const xCoor = 28 + x + X;
           const yCoor = 3 + y + Y;
-          console.log(`\x1b[${yCoor};${xCoor}H` + '▮');        
+          const xCoor = 24 + x + 2*X;
+          console.log(`\x1b[${yCoor};${xCoor}H` + shapeFigure);        
         }
     }
   };
 }
 
-const fn = () => {
+const showPassivePieces = () => {
+  for (let Y = 0; Y < tetra.playfield.length; Y++) {
+    for (let X = 0; X < tetra.playfield[Y].length; X++) {
+      if (tetra.playfield[Y][X] == 1) {
+        const yCoor = Y + 3;
+        const xCoor = X + 24;
+        console.log(`\x1b[${yCoor};${xCoor}H` + '⬜')
+      }
+    }
+  }
+};
+
+const fn = (reason = 'standart') => {
   console.clear();
-  tetra.movePieceDown();
-  console.log(showField());
-  showPiece();    
+  showField();
+  showPiece();
+  if (reason == 'standart') {
+    tetra.movePieceDown();
+  } else if (reason == 'moveRight') {
+    tetra.movePieceRight();
+  } else if (reason == 'moveLeft') {
+    tetra.movePieceLeft();
+  } else if (reason == 'turnPiece') {
+    tetra.turnPiece();
+  }
+  showPassivePieces();    
   console.log('\x1b[25;10H');
+  console.log(tetra.activeShapeFigure);
 }
 
-setInterval(fn, 1000);
 
+setInterval(fn, 500);
 
-
-/*const readline = require('readline');
 
 process.stdin.setRawMode(true);
-//process.stdin.setEncoding('utf8');
+process.stdin.setEncoding('utf8');
 process.stdin.on('data', c => {
   if (c == '\u0003') {
     console.log('SIGINT');
     process.exit();
   }
-  if (c == '\u001b') {
-    console.log('GG');
-    process.exit();
+  if (c == '\u0020') {
+    fn('turnPiece');
   }
-  console.log('got', c);
+  if (c == '\u001b\u005b\u0044') {
+    fn('moveLeft');
+  } 
+  if (c == '\u001b\u005b\u0043') {
+    fn('moveRight');
+  }   
+  if (c == '\u001b\u005b\u0042') {
+    fn();
+  }    
 })
-*/
 
-/*const rl = readline.createInterface({
+
+
+/*
+const readline = require('readline');
+
+const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout,
 });
@@ -191,22 +227,4 @@ rl.question( name => {
   rl.close;
 });
 */
-
-
-
-const FIGURES = `
-🐧🐧🐧🐧
-
-🐧🐧🐧
-🐧
-
-🐧🐧🐧
-  🐧
-
-🐧🐧
-🐧🐧
-
-🐧🐧
-  🐧🐧
-`;
 
