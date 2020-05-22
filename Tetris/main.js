@@ -1,11 +1,39 @@
 'use strict';
 
-const typeFigures = {};
 
-const shapeFigures = ['🆗', '🆘', '🆚', '🆔'];
+const typeFigures = [
+[
+  [0, 1, 0],
+  [1, 1, 1],
+  [0, 0, 0]
+],
+[
+  [1, 1, 0],
+  [1, 1, 0],
+  [0, 0, 0]
+],
+[
+  [1, 1, 0],
+  [0, 1, 1],
+  [0, 0, 0]
+],
+[
+  [1, 1, 1],
+  [1, 0, 0],
+  [0, 0, 0]
+],
+[
+  [1, 1, 1, 1],
+  [0, 0, 0, 0],
+  [0, 0, 0, 0],
+  [0, 0, 0, 0]
+]
+];
 
-const randomFrom0To3 = () => {
-  const result = Math.floor((Math.random() * 4)); 
+const shapeFigures = ['🆗', '🆘', '🆚', '🆔', '🦠'];
+
+const randomFrom0To4 = () => {
+  const result = Math.floor((Math.random() * 5)); 
   return result;
 };
 
@@ -18,31 +46,37 @@ const createField = (m, n, arr = []) => {
 };
 
 
-
 class MovementsPiece {
-  
+
   score = 0;
-  
-  lines = 0;
   
   level = 0;
   
   playfield = createField(20, 20);
 
-  activeShapeFigure = shapeFigures[randomFrom0To3()];
-  
+  activeShapeFigure = shapeFigures[randomFrom0To4()];
+
   activePiece = {
     x: 0,
     y: 0,
-    blocks: [
-      [0, 1, 0],
-      [1, 1, 1],
-      [0, 0, 0],
-    ],
+    blocks: typeFigures[randomFrom0To4()],
+  };
+
+  redFigures = [];
+
+  blueFigures = [];
+
+  orangeFigures = [];
+
+  purpleFigures = [];
+
+  activePieceNeedClear = {
+    xDel: this.activePiece.x,
+    yDel: this.activePiece.y,
+    blocksDel: this.activePiece.blocks,
   };
 
   
-
   checkErrors() {
     const playfield = this.playfield;
     const {x, y, blocks} = this.activePiece;
@@ -84,7 +118,7 @@ class MovementsPiece {
 
   turnPiece() {
     const blocks = this.activePiece.blocks;
-    let newBlock = [[], [], []];
+    let newBlock = new Array(blocks.length).fill([]);
     for (let i = 0; i < blocks.length; i++) {
       for (let j = 0; j < blocks[i].length; j++) {
         newBlock[i].push(blocks[blocks.length - 1 - j][i]);
@@ -95,18 +129,32 @@ class MovementsPiece {
       this.activePiece.blocks = blocks;
     }
   }
+  
+  deleteLine() {
+    const {x, y, blocks} = this.activePiece;
+    for (let count = 0; count < this.playfield.length; count++) {
+      if (this.playfield[count].indexOf(0) == -1) {
+        const yCoor = 3 + count;
+        const xCoor = 24;
+        console.log(`\x1b[${yCoor};${xCoor}H` + '⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜');
+      }
+    }
+  }
 
   closePieceInField() {
     let {x, y, blocks} = this.activePiece;
     for (let Y = 0; Y < blocks.length; Y++) {
       for (let X = 0; X < blocks[Y].length; X++) {
-      	  if (blocks[Y][X] == 1)
-          this.playfield[y + Y][x + 2*X] = blocks[Y][X];
+      	if (blocks[Y][X] == 1) {
+            this.playfield[y + Y][x + 2*X] = blocks[Y][X];
+            this.playfield[y + Y][x + 2*X + 1] = blocks[Y][X];
+        };
       }
     };
     this.activePiece.y = 0;
     this.activePiece.x = 0;
-    tetra.activeShapeFigure = shapeFigures[randomFrom0To3()];
+    this.activeShapeFigure = shapeFigures[randomFrom0To4()];
+    this.activePiece.blocks = typeFigures[randomFrom0To4()];
   };
 };
 
@@ -118,26 +166,26 @@ const tetra = new MovementsPiece();
 const showField = () => {
   const field = `
                      ⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
-                     ⬛                    ⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
                      ⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛
   `
   console.log(field);
@@ -145,7 +193,22 @@ const showField = () => {
 
 const showPiece = () => {
   const shapeFigure = tetra.activeShapeFigure;
+  const {xDel: xFake, yDel: yFake, blocksDel: blocksFake} = tetra.activePieceNeedClear;
   let {x, y, blocks} = tetra.activePiece;
+  for (let Ydel = 0; Ydel < blocksFake.length; Ydel++) {
+    for (let Xdel = 0; Xdel < blocksFake[Ydel].length; Xdel++) {
+      if (blocksFake[Ydel][Xdel] == 1) {
+        const yCoor = 3 + yFake + Ydel;
+        const xCoor = 24 + xFake + 2*Xdel;
+        if (tetra.playfield[yFake + Ydel][xFake + 2*Xdel] == 0) {
+          console.log(`\x1b[${yCoor};${xCoor}H` + '⬜');
+        };
+      }
+    }
+  }
+  tetra.activePieceNeedClear.xDel = x;
+  tetra.activePieceNeedClear.yDel = y;
+  tetra.activePieceNeedClear.blocksDel = blocks;
     for (let Y = 0; Y < blocks.length; Y++) {
       for (let X = 0; X < blocks[Y].length; X++) {
         if (blocks[Y][X] == 1) {
@@ -156,7 +219,7 @@ const showPiece = () => {
     }
   };
 }
-
+/*
 const showPassivePieces = () => {
   for (let Y = 0; Y < tetra.playfield.length; Y++) {
     for (let X = 0; X < tetra.playfield[Y].length; X++) {
@@ -167,12 +230,11 @@ const showPassivePieces = () => {
       }
     }
   }
-};
+};*/
 
 const fn = (reason = 'standart') => {
-  console.clear();
-  showField();
   showPiece();
+  tetra.deleteLine();
   if (reason == 'standart') {
     tetra.movePieceDown();
   } else if (reason == 'moveRight') {
@@ -181,11 +243,12 @@ const fn = (reason = 'standart') => {
     tetra.movePieceLeft();
   } else if (reason == 'turnPiece') {
     tetra.turnPiece();
-  }
-  showPassivePieces();    
+  }   
   console.log('\x1b[25;10H');
-  console.log(tetra.activeShapeFigure);
 }
+
+console.clear();
+showField();
 
 
 setInterval(fn, 500);
@@ -195,7 +258,7 @@ process.stdin.setRawMode(true);
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', c => {
   if (c == '\u0003') {
-    console.log('SIGINT');
+    console.log('GAME OVER, GG');
     process.exit();
   }
   if (c == '\u0020') {
