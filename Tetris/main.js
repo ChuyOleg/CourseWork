@@ -1,6 +1,5 @@
 'use strict';
 
-
 const typeFigures = [
 [
   [0, 1, 0],
@@ -30,6 +29,7 @@ const typeFigures = [
 ]
 ];
 
+
 const shapeFigures = ['🆗', '🆘', '🆚', '🆔', '🦠'];
 
 const randomFrom0To4 = () => {
@@ -57,18 +57,12 @@ class MovementsPiece {
   activeShapeFigure = shapeFigures[randomFrom0To4()];
 
   activePiece = {
-    x: 0,
+    x: 6,
     y: 0,
     blocks: typeFigures[randomFrom0To4()],
   };
 
-  redFigures = [];
-
-  blueFigures = [];
-
-  orangeFigures = [];
-
-  purpleFigures = [];
+  passiveFiguresColors = {};
 
   activePieceNeedClear = {
     xDel: this.activePiece.x,
@@ -118,25 +112,36 @@ class MovementsPiece {
 
   turnPiece() {
     const blocks = this.activePiece.blocks;
-    let newBlock = new Array(blocks.length).fill([]);
+    if (blocks == typeFigures[1]) return blocks;
+    const newBlocks = [];
     for (let i = 0; i < blocks.length; i++) {
+      newBlocks.push([]);
       for (let j = 0; j < blocks[i].length; j++) {
-        newBlock[i].push(blocks[blocks.length - 1 - j][i]);
+        newBlocks[i].push(blocks[blocks.length - 1 - j][i]);
       }
     }
-    this.activePiece.blocks = newBlock;
+    this.activePiece.blocks = newBlocks;
     if (this.checkErrors()) {
       this.activePiece.blocks = blocks;
     }
   }
   
   deleteLine() {
-    const {x, y, blocks} = this.activePiece;
-    for (let count = 0; count < this.playfield.length; count++) {
+    const {blocks} = this.activePiece;
+    const color = this.passiveFiguresColors;
+    for (let count = this.playfield.length - 1; count >= 0; count--) {
       if (this.playfield[count].indexOf(0) == -1) {
-        const yCoor = 3 + count;
-        const xCoor = 24;
-        console.log(`\x1b[${yCoor};${xCoor}H` + '⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜');
+        for (let point = count; point >= 0; point--) {
+          for (let xNum = 0; xNum < this.playfield[count].length; xNum += 2) {
+            if (color['' + point + xNum] && color['' + (point - 1) + xNum]) {
+              this.passiveFiguresColors['' + point + xNum] = this.passiveFiguresColors['' + (point - 1) + xNum];
+            }
+          }
+          this.playfield[point] = this.playfield[point - 1] ?
+          this.playfield[point - 1] : new Array(this.playfield[point].length).fill(0);  
+        }
+        showPassivePieces();
+        count++;
       }
     }
   }
@@ -148,13 +153,14 @@ class MovementsPiece {
       	if (blocks[Y][X] == 1) {
             this.playfield[y + Y][x + 2*X] = blocks[Y][X];
             this.playfield[y + Y][x + 2*X + 1] = blocks[Y][X];
+            this.passiveFiguresColors['' + (y + Y) + (x + 2*X)] = this.activeShapeFigure;
         };
       }
     };
-    this.activePiece.y = 0;
-    this.activePiece.x = 0;
     this.activeShapeFigure = shapeFigures[randomFrom0To4()];
-    this.activePiece.blocks = typeFigures[randomFrom0To4()];
+    this.activePiece.blocks = typeFigures[randomFrom0To4()];  
+    this.activePiece.y = 0;
+    this.activePiece.x = 6;
   };
 };
 
@@ -167,7 +173,7 @@ const showField = () => {
   const field = `
                      ⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛
                      ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
+                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛   
                      ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
                      ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
                      ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
@@ -219,22 +225,42 @@ const showPiece = () => {
     }
   };
 }
-/*
+
+
 const showPassivePieces = () => {
   for (let Y = 0; Y < tetra.playfield.length; Y++) {
-    for (let X = 0; X < tetra.playfield[Y].length; X++) {
+    for (let X = 0; X < tetra.playfield[Y].length; X += 2) {
+      const yCoor = Y + 3;
+      const xCoor = X + 24;
       if (tetra.playfield[Y][X] == 1) {
-        const yCoor = Y + 3;
-        const xCoor = X + 24;
-        console.log(`\x1b[${yCoor};${xCoor}H` + '⬜')
+        const color = tetra.passiveFiguresColors['' + Y + X];
+        console.log(`\x1b[${yCoor};${xCoor}H` + color);
+      } else {
+        console.log(`\x1b[${yCoor};${xCoor}H` + '⬜');
       }
     }
   }
-};*/
+};
+
+const showNextFigure = () => {
+  //tetra.activeShapeFigure = shapeFigures[randomFrom0To4()];
+  //tetra.activePiece.blocks = typeFigures[randomFrom0To4()];  
+  console.log(` 
+\x1b[3;50H \x1b[31mNEXT FIGURE
+\x1b[4;50H|==========|
+\x1b[5;50H|          |
+\x1b[6;50H|          |
+\x1b[7;50H|          |
+\x1b[8;50H|          |
+\x1b[9;50H|==========|  \x1b[0m
+`);
+
+}
 
 const fn = (reason = 'standart') => {
   showPiece();
   tetra.deleteLine();
+  showNextFigure();
   if (reason == 'standart') {
     tetra.movePieceDown();
   } else if (reason == 'moveRight') {
