@@ -1,55 +1,69 @@
 'use strict';
 
 const typeFigures = [
-[
-  [0, 1, 0],
-  [1, 1, 1],
-  [0, 0, 0]
-],
-[
-  [1, 1, 0],
-  [1, 1, 0],
-  [0, 0, 0]
-],
-[
-  [1, 1, 0],
-  [0, 1, 1],
-  [0, 0, 0]
-],
-[
-  [1, 1, 1],
-  [1, 0, 0],
-  [0, 0, 0]
-],
-[
-  [1, 1, 1, 1],
-  [0, 0, 0, 0],
-  [0, 0, 0, 0],
-  [0, 0, 0, 0]
-]
+  [
+    [0, 1, 0],
+    [1, 1, 1],
+    [0, 0, 0]
+  ],
+  [
+    [1, 1, 0],
+    [1, 1, 0],
+    [0, 0, 0]
+  ],
+  [
+    [1, 1, 0],
+    [0, 1, 1],
+    [0, 0, 0]
+  ],
+  [
+    [1, 1, 1],
+    [1, 0, 0],
+    [0, 0, 0]
+  ],
+  [
+    [1, 1, 1, 1],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0]
+  ]
 ];
 
+
+// перевіряє, чи не настав кінець гри
+// (чи накладається новостворена фігура на вже існуючу)
 const checkEndGame = instance => {
   const { x: checkX, y: checkY, blocks: checkBlocks } = instance.activePiece;
   for (let Y = 0; Y < checkBlocks.length; Y++) {
     for (let X = 0; X < checkBlocks[Y].length; X++) {
-      if (checkBlocks[Y][X] == 1 && instance.playfield[checkY + Y][checkX + X*2] == 1) {
+      if (checkBlocks[Y][X] === 1 &&
+        instance.playfield[checkY + Y][checkX + X * 2] === 1) {
         console.clear();
-        console.log('\x1b[31m \x1b[19;30H 🦍 GAME OVER 🦍 \x1b[0m');
-        process.exit();
+        console.log('\x1b[31m \x1b[18;29H 🦍 GAME OVER 🦍 \x1b[0m');
+        console.log('\x1b[35;30H');
+        process.exit(0);
       }
     }
   }
-}
+};
 
-const shapeFigures = ['🆗', '🆘', '🆚', '🆔', '🦠'];
+const shapeFigures = [
+  '\x1b[31m[]\x1b[0m',  // RED
+  '\x1b[32m[]\x1b[0m',  // Green
+  '\x1b[33m[]\x1b[0m',  // Yellow
+  '\x1b[34m[]\x1b[0m',  // Blue
+  '\x1b[35m[]\x1b[0m',  // Purple
+];
 
+
+// Повертає ціле значення від 0 до 4
+// (використовується для shapeFigures i typeFigures)
 const randomFrom0To4 = () => {
-  const result = Math.floor((Math.random() * 5)); 
+  const result = Math.floor((Math.random() * 5));
   return result;
 };
 
-
+// Створює ігрове поле
 const createField = (m, n, arr = []) => {
   for (let i = 0; i < m; i++) {
     arr.push(new Array(n).fill(0));
@@ -57,61 +71,95 @@ const createField = (m, n, arr = []) => {
   return arr;
 };
 
-
+// виводить усі фігури в консолі, окрім падаючої
 const showPassivePieces = instance => {
   for (let Y = 0; Y < instance.playfield.length; Y++) {
     for (let X = 0; X < instance.playfield[Y].length; X += 2) {
       const yCoor = Y + 3;
       const xCoor = X + 24;
-      if (instance.playfield[Y][X] == 1) {
-        const color = instance.passiveFiguresColors['' + Y + X];
+      if (instance.playfield[Y][X] === 1) {
+        const color = instance.passiveFigCol['' + Y + X];
         console.log(`\x1b[${yCoor};${xCoor}H` + color);
       } else {
-        console.log(`\x1b[${yCoor};${xCoor}H` + '⬜');
+        console.log(`\x1b[${yCoor};${xCoor}H  `);
       }
     }
   }
 };
 
+// Виводить у консоль падаючу фігуру і стирає її попереднє розташування
+const showPiece = instance => {
+  const shapeFigure = instance.activeShapeFigure;
+  const { xDel: xFake, yDel: yFake } = instance.activePieceNeedClear;
+  const { blocksDel: blocksFake } = instance.activePieceNeedClear;
+  const { x, y, blocks } = instance.activePiece;
+  for (let Ydel = 0; Ydel < blocksFake.length; Ydel++) {
+    for (let Xdel = 0; Xdel < blocksFake[Ydel].length; Xdel++) {
+      if (blocksFake[Ydel][Xdel] === 1) {  // Стирає попереднє розташування
+        const yCoor = 3 + yFake + Ydel;
+        const xCoor = 24 + xFake + 2 * Xdel;
+        if (instance.playfield[yFake + Ydel][xFake + 2 * Xdel] === 0) {
+          console.log(`\x1b[${yCoor};${xCoor}H  `);
+        }
+      }
+    }
+  }
+  instance.activePieceNeedClear.xDel = x;
+  instance.activePieceNeedClear.yDel = y;
+  instance.activePieceNeedClear.blocksDel = blocks;
+  for (let Y = 0; Y < blocks.length; Y++) {
+    for (let X = 0; X < blocks[Y].length; X++) {
+      if (blocks[Y][X] === 1) {  // виводить падаючу фігуру
+        const yCoor = 3 + y + Y;
+        const xCoor = 24 + x + 2 * X;
+        console.log(`\x1b[${yCoor};${xCoor}H` + shapeFigure);
+      }
+    }
+  }
+};
 
+// Клас, який відповідає за рухи фігури
 class MovementsPiece {
 
-  score = 0;
-  
-  level = 0;
-  
-  playfield = createField(20, 20);
+  constructor() {
 
-  activeShapeFigure = shapeFigures[randomFrom0To4()];
+    this.score = 0;
 
-  activePiece = {
-    x: 6,
-    y: 0,
-    blocks: typeFigures[randomFrom0To4()],
-  };
+    this.playfield = createField(20, 20);
 
-  passiveFiguresColors = {};
+    this.activeShapeFigure = shapeFigures[randomFrom0To4()];
 
-  activePieceNeedClear = {
-    xDel: this.activePiece.x,
-    yDel: this.activePiece.y,
-    blocksDel: this.activePiece.blocks,
-  };
+    this.activePiece = {
+      x: 6,
+      y: 0,
+      blocks: typeFigures[randomFrom0To4()],
+    };
 
-  nextPiece = {
-    nextBlocks: typeFigures[randomFrom0To4()],
-    nextShape: shapeFigures[randomFrom0To4()],
+    this.passiveFigCol = {};
+
+    this.activePieceNeedClear = {
+      xDel: this.activePiece.x,
+      yDel: this.activePiece.y,
+      blocksDel: this.activePiece.blocks,
+    };
+
+    this.nextPiece = {
+      nextBlocks: typeFigures[randomFrom0To4()],
+      nextShape: shapeFigures[randomFrom0To4()],
+    };
   }
-  
+  // Перевіряє, чи находиться фігура в ігровому полі
+  //і не накладається на інші
   checkErrors() {
     const playfield = this.playfield;
-    const {x, y, blocks} = this.activePiece;
+    const { x, y, blocks } = this.activePiece;
     for (let Y = 0; Y < blocks.length; Y++) {
       for (let X = 0; X < blocks[Y].length; X++) {
         if (
-        	blocks[Y][X] &&
-        	((playfield[y + Y] === undefined || playfield[y + Y][x + 2*X] === undefined) ||
-        	playfield[y + Y][x + 2*X])
+          blocks[Y][X] &&
+          ((playfield[y + Y] === undefined ||
+          playfield[y + Y][x + 2 * X] === undefined) ||
+          playfield[y + Y][x + 2 * X])
         ) {
           return true;
         }
@@ -119,7 +167,8 @@ class MovementsPiece {
     }
     return false;
   }
-  
+
+  // Рух фігури вниз
   movePieceDown() {
     this.activePiece.y += 1;
     if (this.checkErrors()) {
@@ -128,23 +177,23 @@ class MovementsPiece {
     }
   }
 
-  movePieceRight() {
+  movePieceRight() {  // Рух фігури вправо
     this.activePiece.x += 2;
     if (this.checkErrors()) {
       this.activePiece.x -= 2;
     }
   }
 
-  movePieceLeft() {
+  movePieceLeft() {  // Рух фігури вліво
     this.activePiece.x -= 2;
     if (this.checkErrors()) {
       this.activePiece.x += 2;
     }
-  };
+  }
 
-  turnPiece() {
+  turnPiece() {  // Поворот фігури на 90 градусів
     const blocks = this.activePiece.blocks;
-    if (blocks == typeFigures[1]) return blocks;
+    if (blocks === typeFigures[1]) return blocks;
     const newBlocks = [];
     for (let i = 0; i < blocks.length; i++) {
       newBlocks.push([]);
@@ -157,183 +206,169 @@ class MovementsPiece {
       this.activePiece.blocks = blocks;
     }
   }
-  
+
+  // Видалення заповненого рядка
   deleteLine() {
-    const {blocks} = this.activePiece;
-    const color = this.passiveFiguresColors;
+    const color = this.passiveFigCol;
     for (let count = this.playfield.length - 1; count >= 0; count--) {
-      if (this.playfield[count].indexOf(0) == -1) {
+      if (this.playfield[count].indexOf(0) === -1) {
         for (let point = count; point >= 0; point--) {
           for (let xNum = 0; xNum < this.playfield[count].length; xNum += 2) {
-            if (color['' + (point - 1) + xNum]) {  // Змінює колір куба на колір куба над ним
-              this.passiveFiguresColors['' + point + xNum] = this.passiveFiguresColors['' + (point - 1) + xNum];
+            const keyThisFig = '' + (point) + xNum;
+            const keyUpFig = '' + (point - 1) + xNum;
+            // Змінює колір куба на колір куба над ним
+            if (color[keyUpFig]) {
+              this.passiveFigCol[keyThisFig] = this.passiveFigCol[keyUpFig];
             }
           }
-          this.playfield[point] = this.playfield[point - 1] ?                   //  Змінює рядок на рядок над ним (нулі та одинииці)
-          this.playfield[point - 1] : new Array(this.playfield[point].length).fill(0);  
+          //  Змінює рядок на рядок над ним (нулі та одинииці)
+          this.playfield[point] = this.playfield[point - 1] ?
+            this.playfield[point - 1] :
+            new Array(this.playfield[point].length).fill(0);
         }
+        this.score += 1;
         showPassivePieces(this);
         count++;
+        console.log('\x1b[12;63H' + this.score);
       }
     }
   }
 
+  // Фіксує фігуру у полі, коли вона зайняла кінцеву позицію
   closePieceInField() {
-    let {x, y, blocks} = this.activePiece;
+    const { x, y, blocks } = this.activePiece;
     for (let Y = 0; Y < blocks.length; Y++) {
       for (let X = 0; X < blocks[Y].length; X++) {
-      	if (blocks[Y][X] == 1) {
-            this.playfield[y + Y][x + 2*X] = blocks[Y][X];
-            this.playfield[y + Y][x + 2*X + 1] = blocks[Y][X];
-            this.passiveFiguresColors['' + (y + Y) + (x + 2*X)] = this.activeShapeFigure;
-        };
+        if (blocks[Y][X] === 1) {
+          const keyCol = '' + (y + Y) + (x + 2 * X);
+          this.playfield[y + Y][x + 2 * X] = blocks[Y][X];
+          this.playfield[y + Y][x + 2 * X + 1] = blocks[Y][X];
+          this.passiveFigCol[keyCol] = this.activeShapeFigure;
+        }
       }
-    };
+    }
     this.activeShapeFigure = this.nextPiece.nextShape;
     this.activePiece.blocks = this.nextPiece.nextBlocks;
-    this.nextPiece.nextShape = shapeFigures[randomFrom0To4()];  
+    this.nextPiece.nextShape = shapeFigures[randomFrom0To4()];
     this.nextPiece.nextBlocks = typeFigures[randomFrom0To4()];
     this.showNextPiece();
     this.activePiece.y = 0;
     this.activePiece.x = 6;
     checkEndGame(this);
-  };
+  }
 
+  // Виводить наступну фігуру в окремому полі
   showNextPiece() {
-    const {nextBlocks, nextShape} = this.nextPiece;
+    const { nextBlocks, nextShape } = this.nextPiece;
     for (let Y = 0; Y < 4; Y++) {
       for (let X = 0; X < 4; X++) {
         const yCoor = Y + 5;
-        const xCoor = 2*X + 52;
-        if (nextBlocks[Y] && nextBlocks[Y][X] == 1) {
+        const xCoor = 2 * X + 52;
+        if (nextBlocks[Y] && nextBlocks[Y][X] === 1) {
           console.log(`\x1b[${yCoor};${xCoor}H` + nextShape);
         } else {
-          console.log(`\x1b[${yCoor};${xCoor}H` + '⬜');
+          console.log(`\x1b[${yCoor};${xCoor}H  `);
         }
       }
     }
   }
-};
+}
 
 
 
 const tetra = new MovementsPiece();
 
-
+// Виводить в консоль ігрове поле
 const showField = () => {
   const field = `
-                     ⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛   
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬜⬜⬜⬜⬜⬜⬜⬜⬜⬜⬛
-                     ⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛⬛
-  `
+                      ======================
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                     ||                    ||
+                      ======================
+  `;
   console.log(field);
-}
+};
 
-const showPiece = (instance) => {
-  const shapeFigure = instance.activeShapeFigure;
-  const {xDel: xFake, yDel: yFake, blocksDel: blocksFake} = instance.activePieceNeedClear;
-  let {x, y, blocks} = instance.activePiece;
-  for (let Ydel = 0; Ydel < blocksFake.length; Ydel++) {
-    for (let Xdel = 0; Xdel < blocksFake[Ydel].length; Xdel++) {
-      if (blocksFake[Ydel][Xdel] == 1) {
-        const yCoor = 3 + yFake + Ydel;
-        const xCoor = 24 + xFake + 2*Xdel;
-        if (instance.playfield[yFake + Ydel][xFake + 2*Xdel] == 0) {
-          console.log(`\x1b[${yCoor};${xCoor}H` + '⬜');
-        };
-      }
-    }
-  }
-  tetra.activePieceNeedClear.xDel = x;
-  tetra.activePieceNeedClear.yDel = y;
-  tetra.activePieceNeedClear.blocksDel = blocks;
-    for (let Y = 0; Y < blocks.length; Y++) {
-      for (let X = 0; X < blocks[Y].length; X++) {
-        if (blocks[Y][X] == 1) {
-          const yCoor = 3 + y + Y;
-          const xCoor = 24 + x + 2*X;
-          console.log(`\x1b[${yCoor};${xCoor}H` + shapeFigure);        
-        }
-    }
-  };
-}
-
-
-const showFieldForNextFigure = () => { 
+// Виводить поле для наступної фігури
+const showFieldForNextFigure = () => {
   console.log(` 
-\x1b[3;50H \x1b[31mNEXT FIGURE
-\x1b[4;50H⬛⬛⬛⬛⬛⬛
-\x1b[5;50H⬛⬜⬜⬜⬜⬛          
-\x1b[6;50H⬛⬜⬜⬜⬜⬛          
-\x1b[7;50H⬛⬜⬜⬜⬜⬛         
-\x1b[8;50H⬛⬜⬜⬜⬜⬛ 
-\x1b[9;50H⬛⬛⬛⬛⬛⬛  \x1b[0m
+\x1b[3;50H \x1b[2mNEXT FIGURE\x1b[0m
+\x1b[4;50H ========== 
+\x1b[5;50H||        ||
+\x1b[6;50H||        ||
+\x1b[7;50H||        ||
+\x1b[8;50H||        ||
+\x1b[9;50H ========== 
 `);
 
-}
+};
 
+// Запускає деякі попередні функції/методи, які повинні відбуватися регулярно
 const fn = (reason = 'standart') => {
   showPiece(tetra);
   tetra.deleteLine();
-  if (reason == 'standart') {
+  if (reason === 'standart') {
     tetra.movePieceDown();
-  } else if (reason == 'moveRight') {
+  } else if (reason === 'moveRight') {
     tetra.movePieceRight();
-  } else if (reason == 'moveLeft') {
+  } else if (reason === 'moveLeft') {
     tetra.movePieceLeft();
-  } else if (reason == 'turnPiece') {
+  } else if (reason === 'turnPiece') {
     tetra.turnPiece();
-  }   
+  }
   console.log('\x1b[25;10H');
-}
+};
 
 console.clear();
 showField();
 showFieldForNextFigure();
 tetra.showNextPiece();
+console.log('\x1b[32m\x1b[5m \x1b[12;49H 🦍 SCORE 🦍  \x1b[0m' + tetra.score);
 
-setInterval(fn, 500);
+const action = setInterval(fn, 500);
 
-
+// Відповідає за взаємодію користувача з клавіатурою
 process.stdin.setRawMode(true);
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', c => {
-  if (c == '\u0003') {
+  if (c === '\u0003') {  // CTRL + C
     console.log('GAME OVER, GG');
     process.exit();
   }
-  if (c == '\u0020') {
+  if (c === '\u0020') {  // DOM_VK_SPACE
     fn('turnPiece');
   }
-  if (c == '\u001b\u005b\u0044') {
+  if (c === '\u001b\u005b\u0044') { // DOM_VK_LEFT
     fn('moveLeft');
-  } 
-  if (c == '\u001b\u005b\u0043') {
+  }
+  if (c === '\u001b\u005b\u0043') { // DOM_VK_RIGHT
     fn('moveRight');
-  }   
-  if (c == '\u001b\u005b\u0042') {
+  }
+  if (c === '\u001b\u005b\u0042') { // DOM_VK_DOWN
     fn();
-  }    
-})
+  }
+  if (c === '\u001b') {
+    clearInterval(action);
+  }
+});
 
 
 
@@ -350,4 +385,3 @@ rl.question( name => {
   rl.close;
 });
 */
-
