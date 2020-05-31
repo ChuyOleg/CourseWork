@@ -149,6 +149,8 @@ class MovementsPiece {
       level: 1,
     };
 
+    this.pause = false;
+
     this.activeShapeFigure = shapeFigures[randomFrom0To4()];
 
     this.activePiece = {
@@ -360,43 +362,59 @@ tetra.showNextPiece();
 console.log('\x1b[32m\x1b[5m \x1b[12;49H 🦍 SCORE 🦍  \x1b[0m' + tetra.score);
 
 console.log('\x1b[32m\x1b[14;49H LEVEL \x1b[0m' + tetra.level.level);
-console.log('\x1b[32m\x1b[16;49H Arrows - move figure \x1b[0m');
-console.log('\x1b[32m\x1b[18;49H SPACE - turn figure \x1b[0m');
-console.log('\x1b[32m\x1b[20;49H Shift + Up = Level+ \x1b[0m');
-console.log('\x1b[32m\x1b[22;49H Shift + Down = Level- \x1b[0m');
+console.log('\x1b[32m\x1b[16;49H Arrows - Move figure \x1b[0m');
+console.log('\x1b[32m\x1b[18;49H SPACE - Turn figure \x1b[0m');
+console.log('\x1b[32m\x1b[20;49H Escape - Pause (+|-) \x1b[0m');
+console.log('\x1b[32m\x1b[22;49H Shift + Up = Level+ \x1b[0m');
+console.log('\x1b[32m\x1b[24;49H Shift + Down = Level- \x1b[0m');
 tetra.level.speedometer = setInterval(fn, tetra.level.speed);
+
+const codeKeys = {
+  'CTRL + C': '\u0003',
+  'Space': '\u0020',
+  'Left': '\u001b\u005b\u0044',
+  'Right': '\u001b\u005b\u0043',
+  'Down': '\u001b\u005b\u0042',
+  'Shift + Up': '\u001b\u005b\u0031\u003b\u0032\u0041',
+  'Shift + Down': '\u001b\u005b\u0031\u003b\u0032\u0042',
+  'Escape': '\u001b',
+};
 
 // Відповідає за взаємодію користувача з клавіатурою
 process.stdin.setRawMode(true);
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', c => {
-  if (c === '\u0003') {  // CTRL + C
+  if (c === codeKeys['CTRL + C']) {
     console.log('GAME OVER, GG');
     process.exit();
   }
-  if (c === '\u0020') {  // DOM_VK_SPACE
+  if (c === codeKeys['Space'] && (!tetra.pause)) {
     fn('turnPiece');
   }
-  if (c === '\u001b\u005b\u0044') { // DOM_VK_LEFT
+  if (c === codeKeys['Left'] && (!tetra.pause)) {
     fn('moveLeft');
   }
-  if (c === '\u001b\u005b\u0043') { // DOM_VK_RIGHT
+  if (c === codeKeys['Right'] && (!tetra.pause)) {
     fn('moveRight');
   }
-  if (c === '\u001b\u005b\u0042') { // DOM_VK_DOWN
+  if (c === codeKeys['Down'] && (!tetra.pause)) {
     fn();
   }
-  if (c === '\u001b\u005b\u0031\u003b\u0032\u0041') {  // Shift + Up
+  if (c === codeKeys['Shift + Up'] && (!tetra.pause)) {
     eventEm.emit('levelUp', tetra, fn);
   }
-  if (c === '\u001b\u005b\u0031\u003b\u0032\u0042') {  //Shift + Down
+  if (c === codeKeys['Shift + Down'] && (!tetra.pause)) {
     eventEm.emit('levelDown', tetra, fn);
   }
-  if (c === '\u001b\u005b\u0031\u003b\u0032\u0042') {  //Shift + Down
-    eventEm.emit('levelDown', tetra, fn);
+  if (c === codeKeys['Escape']) {
+    if (tetra.pause) {
+      tetra.level.speedometer = setInterval(fn, tetra.level.speed);
+      tetra.pause = false;
+    } else {
+      clearInterval(tetra.level.speedometer);
+      tetra.pause = true;
+    }
   }
-  //if (c === '\u001b') {
-  //}
 });
 
 
