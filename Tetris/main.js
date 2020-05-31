@@ -113,13 +113,6 @@ const showPiece = instance => {
 };
 
 eventEm.on('levelUp', (instance, func) => {
-<<<<<<< HEAD
-  if (instance.level.speed > 200) {
-    instance.level.speed -= 50;
-    clearInterval(instance.level.speedometer);
-    func();
-    instance.level.speedometer = setInterval(func, instance.level.speed);
-=======
   if (instance.level.speed > 150) {
     instance.level.speed -= 50;
     instance.level.level += 1;
@@ -127,24 +120,17 @@ eventEm.on('levelUp', (instance, func) => {
     func();
     instance.level.speedometer = setInterval(func, instance.level.speed);
     console.log('\x1b[32m\x1b[14;49H LEVEL \x1b[0m' + instance.level.level);
->>>>>>> e2e6ca34ebe9715fbb1bad1bc479585f38446a68
   }
 });
 
 eventEm.on('levelDown', (instance, func) => {
   if (instance.level.speed < 500) {
     instance.level.speed += 50;
-<<<<<<< HEAD
-    clearInterval(instance.level.speedometer);
-    func();
-    instance.level.speedometer = setInterval(func, instance.level.speed);
-=======
     instance.level.level -= 1;
     clearInterval(instance.level.speedometer);
     func();
     instance.level.speedometer = setInterval(func, instance.level.speed);
     console.log('\x1b[32m\x1b[14;49H LEVEL \x1b[0m' + instance.level.level);
->>>>>>> e2e6ca34ebe9715fbb1bad1bc479585f38446a68
   }
 });
 
@@ -160,10 +146,7 @@ class MovementsPiece {
     this.level = {
       speed: 500,
       speedometer: null,
-<<<<<<< HEAD
-=======
       level: 1,
->>>>>>> e2e6ca34ebe9715fbb1bad1bc479585f38446a68
     };
 
     this.activeShapeFigure = shapeFigures[randomFrom0To4()];
@@ -368,7 +351,6 @@ const fn = (reason = 'standart') => {
     tetra.turnPiece();
   }
   console.log('\x1b[25;10H');
-  console.log(tetra.level.speed);
 };
 
 console.clear();
@@ -376,15 +358,12 @@ showField();
 showFieldForNextFigure();
 tetra.showNextPiece();
 console.log('\x1b[32m\x1b[5m \x1b[12;49H 🦍 SCORE 🦍  \x1b[0m' + tetra.score);
-<<<<<<< HEAD
 
-=======
 console.log('\x1b[32m\x1b[14;49H LEVEL \x1b[0m' + tetra.level.level);
 console.log('\x1b[32m\x1b[16;49H Arrows - move figure \x1b[0m');
 console.log('\x1b[32m\x1b[18;49H SPACE - turn figure \x1b[0m');
 console.log('\x1b[32m\x1b[20;49H Shift + Up = Level+ \x1b[0m');
 console.log('\x1b[32m\x1b[22;49H Shift + Down = Level- \x1b[0m');
->>>>>>> e2e6ca34ebe9715fbb1bad1bc479585f38446a68
 tetra.level.speedometer = setInterval(fn, tetra.level.speed);
 
 // Відповідає за взаємодію користувача з клавіатурою
@@ -409,17 +388,13 @@ process.stdin.on('data', c => {
   }
   if (c === '\u001b\u005b\u0031\u003b\u0032\u0041') {  // Shift + Up
     eventEm.emit('levelUp', tetra, fn);
-<<<<<<< HEAD
   }
   if (c === '\u001b\u005b\u0031\u003b\u0032\u0042') {  //Shift + Down
     eventEm.emit('levelDown', tetra, fn);
   }
-=======
-  }
   if (c === '\u001b\u005b\u0031\u003b\u0032\u0042') {  //Shift + Down
     eventEm.emit('levelDown', tetra, fn);
   }
->>>>>>> e2e6ca34ebe9715fbb1bad1bc479585f38446a68
   //if (c === '\u001b') {
   //}
 });
