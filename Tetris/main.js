@@ -1,5 +1,9 @@
 'use strict';
 
+const { MyEventEmitter, hideLoops } = require('./extraConstructions.js');
+
+const eventEm = new MyEventEmitter();
+
 const typeFigures = [
   [
     [0, 1, 0],
@@ -53,16 +57,6 @@ const createField = (m, n, arr = []) => {
   }
   return arr;
 };
-
-const hideLoops = (instance, arr, addForX, listener) => {
-  for (let Y = 0; Y < arr.length; Y++) {
-    for (let X = 0; X < arr[Y].length; X += addForX) {
-      const result = listener(instance, Y, X);
-      if (result === true) return true;  // Need for method checkErrors
-    }
-  }
-};
-
 
 // перевіряє, чи не настав кінець гри
 // (чи накладається новостворена фігура на вже існуючу)
@@ -118,6 +112,28 @@ const showPiece = instance => {
   });
 };
 
+eventEm.on('levelUp', (instance, func) => {
+  if (instance.level.speed > 150) {
+    instance.level.speed -= 50;
+    instance.level.level += 1;
+    clearInterval(instance.level.speedometer);
+    func();
+    instance.level.speedometer = setInterval(func, instance.level.speed);
+    console.log('\x1b[32m\x1b[14;49H LEVEL \x1b[0m' + instance.level.level);
+  }
+});
+
+eventEm.on('levelDown', (instance, func) => {
+  if (instance.level.speed < 500) {
+    instance.level.speed += 50;
+    instance.level.level -= 1;
+    clearInterval(instance.level.speedometer);
+    func();
+    instance.level.speedometer = setInterval(func, instance.level.speed);
+    console.log('\x1b[32m\x1b[14;49H LEVEL \x1b[0m' + instance.level.level);
+  }
+});
+
 // Клас, який відповідає за рухи фігури
 class MovementsPiece {
 
@@ -126,6 +142,12 @@ class MovementsPiece {
     this.score = 0;
 
     this.playfield = createField(20, 20);
+
+    this.level = {
+      speed: 500,
+      speedometer: null,
+      level: 1,
+    };
 
     this.activeShapeFigure = shapeFigures[randomFrom0To4()];
 
@@ -336,8 +358,12 @@ showField();
 showFieldForNextFigure();
 tetra.showNextPiece();
 console.log('\x1b[32m\x1b[5m \x1b[12;49H 🦍 SCORE 🦍  \x1b[0m' + tetra.score);
-
-const action = setInterval(fn, 500);
+console.log('\x1b[32m\x1b[14;49H LEVEL \x1b[0m' + tetra.level.level);
+console.log('\x1b[32m\x1b[16;49H Arrows - move figure \x1b[0m');
+console.log('\x1b[32m\x1b[18;49H SPACE - turn figure \x1b[0m');
+console.log('\x1b[32m\x1b[20;49H Shift + Up = Level+ \x1b[0m');
+console.log('\x1b[32m\x1b[22;49H Shift + Down = Level- \x1b[0m');
+tetra.level.speedometer = setInterval(fn, tetra.level.speed);
 
 // Відповідає за взаємодію користувача з клавіатурою
 process.stdin.setRawMode(true);
@@ -359,9 +385,14 @@ process.stdin.on('data', c => {
   if (c === '\u001b\u005b\u0042') { // DOM_VK_DOWN
     fn();
   }
-  if (c === '\u001b') {
-    clearInterval(action);
+  if (c === '\u001b\u005b\u0031\u003b\u0032\u0041') {  // Shift + Up
+    eventEm.emit('levelUp', tetra, fn);
   }
+  if (c === '\u001b\u005b\u0031\u003b\u0032\u0042') {  //Shift + Down
+    eventEm.emit('levelDown', tetra, fn);
+  }
+  //if (c === '\u001b') {
+  //}
 });
 
 
