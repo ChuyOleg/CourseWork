@@ -67,6 +67,7 @@ const checkEndGame = instance => {
       instance.playfield[checkY + Y][checkX + X * 2] === 1) {
       console.clear();
       console.log('\x1b[31m \x1b[18;29H 🦍 GAME OVER 🦍 \x1b[0m');
+      console.log(`\x1b[33m \x1b[20;32H SCORE => ${instance.score} \x1b[0m`);
       console.log('\x1b[28;30H');
       process.exit(0);
     }
@@ -340,7 +341,7 @@ const showFieldForNextFigure = () => {
 };
 
 // Запускає деякі попередні функції/методи, які повинні відбуватися регулярно
-const fn = (reason = 'standart') => {
+const runGame = (reason = 'standart') => {
   showPiece(tetra);
   tetra.deleteLine();
   if (reason === 'standart') {
@@ -355,19 +356,20 @@ const fn = (reason = 'standart') => {
   console.log('\x1b[25;10H');
 };
 
-console.clear();
-showField();
-showFieldForNextFigure();
-tetra.showNextPiece();
-console.log('\x1b[32m\x1b[5m \x1b[12;49H 🦍 SCORE 🦍  \x1b[0m' + tetra.score);
-
-console.log('\x1b[32m\x1b[14;49H LEVEL \x1b[0m' + tetra.level.level);
-console.log('\x1b[32m\x1b[16;49H Arrows - Move figure \x1b[0m');
-console.log('\x1b[32m\x1b[18;49H SPACE - Turn figure \x1b[0m');
-console.log('\x1b[32m\x1b[20;49H Escape - Pause (+|-) \x1b[0m');
-console.log('\x1b[32m\x1b[22;49H Shift + Up = Level+ \x1b[0m');
-console.log('\x1b[32m\x1b[24;49H Shift + Down = Level- \x1b[0m');
-tetra.level.speedometer = setInterval(fn, tetra.level.speed);
+const runConsoleLogs = instance => {
+  console.clear();
+  showField();
+  showFieldForNextFigure();
+  instance.showNextPiece();
+  console.log('\x1b[32m\x1b[5m\x1b[12;49H 🦍 SCORE 🦍  \x1b[0m' + instance.score);
+  console.log('\x1b[32m\x1b[14;49H LEVEL \x1b[0m' + instance.level.level);
+  console.log('\x1b[32m\x1b[16;49H Arrows - Move figure \x1b[0m');
+  console.log('\x1b[32m\x1b[18;49H SPACE - Turn figure \x1b[0m');
+  console.log('\x1b[32m\x1b[20;49H Escape - Pause (+|-) \x1b[0m');
+  console.log('\x1b[32m\x1b[22;49H Shift + Up = Level+ \x1b[0m');
+  console.log('\x1b[32m\x1b[24;49H Shift + Down = Level- \x1b[0m');
+  instance.level.speedometer = setInterval(runGame, instance.level.speed);
+};
 
 const codeKeys = {
   'CTRL + C': '\u0003',
@@ -383,32 +385,34 @@ const codeKeys = {
 // Відповідає за взаємодію користувача з клавіатурою
 process.stdin.setRawMode(true);
 process.stdin.setEncoding('utf8');
-process.stdin.on('data', c => {
+process.stdin.on('data', c  => {
   if (c === codeKeys['CTRL + C']) {
-    console.log('GAME OVER, GG');
+    console.log('\x1b[31m \x1b[25;26H 🦍 GAME OVER 🦍 \x1b[0m');
+    console.log(`\x1b[33m \x1b[27;29H SCORE => ${tetra.score} \x1b[0m`);
+    console.log('\x1b[28;30H');
     process.exit();
   }
   if (c === codeKeys['Space'] && (!tetra.pause)) {
-    fn('turnPiece');
+    runGame('turnPiece');
   }
   if (c === codeKeys['Left'] && (!tetra.pause)) {
-    fn('moveLeft');
+    runGame('moveLeft');
   }
   if (c === codeKeys['Right'] && (!tetra.pause)) {
-    fn('moveRight');
+    runGame('moveRight');
   }
   if (c === codeKeys['Down'] && (!tetra.pause)) {
-    fn();
+    runGame();
   }
   if (c === codeKeys['Shift + Up'] && (!tetra.pause)) {
-    eventEm.emit('levelUp', tetra, fn);
+    eventEm.emit('levelUp', tetra, runGame);
   }
   if (c === codeKeys['Shift + Down'] && (!tetra.pause)) {
-    eventEm.emit('levelDown', tetra, fn);
+    eventEm.emit('levelDown', tetra, runGame);
   }
   if (c === codeKeys['Escape']) {
     if (tetra.pause) {
-      tetra.level.speedometer = setInterval(fn, tetra.level.speed);
+      tetra.level.speedometer = setInterval(runGame, tetra.level.speed);
       tetra.pause = false;
     } else {
       clearInterval(tetra.level.speedometer);
@@ -417,8 +421,7 @@ process.stdin.on('data', c => {
   }
 });
 
-
-
+runConsoleLogs(tetra);
 
 /*
 const readline = require('readline');
