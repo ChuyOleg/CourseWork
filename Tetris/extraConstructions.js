@@ -1,6 +1,6 @@
 'use strict';
 
-class MyEventEmitter {
+class SimpleEventEmitter {
 
   constructor() {
     this.events = new Object();
@@ -22,15 +22,17 @@ class MyEventEmitter {
 }
 
 const hideLoops = (instance, arr, addForX, listener) => {
-  for (let Y = 0; Y < arr.length; Y++) {
-    for (let X = 0; X < arr[Y].length; X += addForX) {
-      const result = listener(instance, Y, X);
-      if (result === true) return true;  // Need for method checkErrors
+  for (let y = 0; y < arr.length; y++) {
+    for (let x = 0; x < arr[y].length; x += addForX) {
+      if (listener(instance, y, x)) return true;
     }
   }
 };
 
+const random = (from, to) => Math.floor(from + Math.random() * (to + 1));
+
 module.exports = {
-  MyEventEmitter,
+  SimpleEventEmitter,
   hideLoops,
+  random,
 };
