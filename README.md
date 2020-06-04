@@ -11,8 +11,8 @@
 
 Користувач взаємодіє з грою за допомогою клавіатури, так як використовуєтсья 'process.stdin.setRawMode(true)',
 
-На даний момент програмний код не використовує складних конструкції (плануються: EventEmitter, callback, ...),
+Програмний код використовує: EventEmitter, callback, listener, setInterval.
 
 Програмний код проходить перевірку eslint (конфігурація eslint наявна в репозиторії),
 
-Робоча почта: misterchuy21@gmail.com.
+Робоча пошта: misterchuy21@gmail.com.

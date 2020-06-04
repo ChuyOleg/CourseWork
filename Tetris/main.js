@@ -394,3 +394,4 @@ process.stdin.on('data', c => {
 });
 
 runConsoleLogs(tetra);
+
