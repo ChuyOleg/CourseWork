@@ -1,61 +1,15 @@
 'use strict';
 
 const extraFuncs = require('./extraConstructions.js');
+const { typeFigures, shapeFigures, colors } = require('./figures.js');
+const { createField, showField, showFieldForNextFigure } = require('./fields');
 
 const EventEmitter = extraFuncs.SimpleEventEmitter;
 const hideLoops = extraFuncs.hideLoops;
 const random = extraFuncs.random;
 const moveCursor = extraFuncs.moveCursor;
 
-const typeFigures = [
-  [
-    [0, 1, 0],
-    [1, 1, 1],
-    [0, 0, 0]
-  ],
-  [
-    [1, 1, 0],
-    [1, 1, 0],
-    [0, 0, 0]
-  ],
-  [
-    [1, 1, 0],
-    [0, 1, 1],
-    [0, 0, 0]
-  ],
-  [
-    [1, 1, 1],
-    [1, 0, 0],
-    [0, 0, 0]
-  ],
-  [
-    [1, 1, 1, 1],
-    [0, 0, 0, 0],
-    [0, 0, 0, 0],
-    [0, 0, 0, 0]
-  ]
-];
-
-
-const shapeFigures = [
-  '\x1b[31m[]',  // RED
-  '\x1b[32m[]',  // Green
-  '\x1b[33m[]',  // Yellow
-  '\x1b[34m[]',  // Blue
-  '\x1b[35m[]',  // Purple
-];
-
-// Повертає ціле значення від 0 до 4
-// (використовується для shapeFigures i typeFigures)
 const randomTo4 = random.bind(null, 0, 4);
-
-// Створює ігрове поле
-const createField = (m, n, arr = []) => {
-  for (let i = 0; i < m; i++) {
-    arr.push(new Array(n).fill(0));
-  }
-  return arr;
-};
 
 // перевіряє, чи не настав кінець гри
 // (чи накладається новостворена фігура на вже існуючу)
@@ -66,8 +20,8 @@ const checkEndGame = instance => {
     const xCoor = checkX + x * 2;
     if (checkBlocks[y][x] === 1 && instance.playfield[yCoor][xCoor] === 1) {
       console.clear();
-      moveCursor(' 🦍 GAME OVER 🦍', 18, 29, 31);
-      moveCursor(` SCORE => ${instance.score}`, 20, 32, 33);
+      moveCursor(' 🦍 GAME OVER 🦍', 18, 29, colors.red);
+      moveCursor(` SCORE => ${instance.score}`, 20, 32, colors.yellow);
       moveCursor('', 28, 30);
       process.exit(0);
     }
@@ -121,7 +75,7 @@ eventEm.on('levelUp', (instance, func) => {
     clearInterval(instance.level.speedometer);
     func();
     instance.level.speedometer = setInterval(func, instance.level.speed);
-    moveCursor(instance.level.level, 14, 56);
+    moveCursor(instance.level.level, 14, 57);
   }
 });
 
@@ -132,7 +86,7 @@ eventEm.on('levelDown', (instance, func) => {
     clearInterval(instance.level.speedometer);
     func();
     instance.level.speedometer = setInterval(func, instance.level.speed);
-    moveCursor(instance.level.level, 14, 56);
+    moveCursor(instance.level.level, 14, 57);
   }
 });
 
@@ -289,30 +243,6 @@ class MovementsPiece {
 
 const tetra = new MovementsPiece();
 
-// Виводить в консоль ігрове поле
-const showField = () => {
-  let field = '\x1b[2;23H======================';
-  for (let count = 3; count < 23; count++) {
-    field += `\n \x1b[${count};21H ||                    ||`;
-  }
-  field += '\n \x1b[23;23H======================';
-  console.log(field);
-};
-
-// Виводить поле для наступної фігури
-const showFieldForNextFigure = () => {
-  console.log(` 
-\x1b[3;50H NEXT FIGURE
-\x1b[4;50H ========== 
-\x1b[5;50H||        ||
-\x1b[6;50H||        ||
-\x1b[7;50H||        ||
-\x1b[8;50H||        ||
-\x1b[9;50H ========== 
-`);
-
-};
-
 // Запускає деякі попередні функції/методи, які повинні відбуватися регулярно
 const runGame = (reason = 'standart') => {
   showPiece(tetra);
@@ -360,8 +290,8 @@ process.stdin.setRawMode(true);
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', c => {
   if (c === codeKeys['CTRL + C']) {
-    moveCursor(' 🦍 GAME OVER 🦍', 25, 26, 31);
-    moveCursor(` SCORE => ${tetra.score}`, 27, 29, 33);
+    moveCursor(' 🦍 GAME OVER 🦍', 25, 26, colors.red);
+    moveCursor(` SCORE => ${tetra.score}`, 27, 29, colors.yellow);
     moveCursor('', 28, 30);
     process.exit();
   }
@@ -395,4 +325,3 @@ process.stdin.on('data', c => {
 });
 
 runConsoleLogs(tetra);
-
