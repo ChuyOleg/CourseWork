@@ -31,9 +31,14 @@ const hideLoops = (instance, arr, addForX, listener) => {
 
 const random = (from, to) => Math.floor(from + Math.random() * (to + 1));
 
+const moveCursor = (string, y, x, color) => {
+  if (color) console.log(`\x1b[${color}m\x1b[${y};${x}H${string}`);
+  else console.log(`\x1b[${y};${x}H${string}`);
+};
+
 module.exports = {
   SimpleEventEmitter,
   hideLoops,
   random,
+  moveCursor,
 };
-

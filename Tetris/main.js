@@ -5,6 +5,7 @@ const extraFuncs = require('./extraConstructions.js');
 const EventEmitter = extraFuncs.SimpleEventEmitter;
 const hideLoops = extraFuncs.hideLoops;
 const random = extraFuncs.random;
+const moveCursor = extraFuncs.moveCursor;
 
 const typeFigures = [
   [
@@ -65,9 +66,9 @@ const checkEndGame = instance => {
     const xCoor = checkX + x * 2;
     if (checkBlocks[y][x] === 1 && instance.playfield[yCoor][xCoor] === 1) {
       console.clear();
-      console.log('\x1b[31m \x1b[18;29H 🦍 GAME OVER 🦍');
-      console.log(`\x1b[33m \x1b[20;32H SCORE => ${instance.score} \x1b[0m`);
-      console.log('\x1b[28;30H');
+      moveCursor(' 🦍 GAME OVER 🦍', 18, 29, 31);
+      moveCursor(` SCORE => ${instance.score}`, 20, 32, 33);
+      moveCursor('', 28, 30);
       process.exit(0);
     }
   });
@@ -79,9 +80,9 @@ const showPassivePieces = (instance, y, x) => {
   const xCoor = x + 24;
   const color = instance.passiveFigCol['' + y + x];
   if (instance.playfield[y][x] === 1) {
-    console.log(`\x1b[${yCoor};${xCoor}H` + color);
+    moveCursor(color, yCoor, xCoor);
   } else {
-    console.log(`\x1b[${yCoor};${xCoor}H  `);
+    moveCursor('  ', yCoor, xCoor);
   }
 };
 
@@ -95,6 +96,7 @@ const showPiece = instance => {
     const xCoor = xDel + 2 * x;
     // Стирає попереднє розташування
     if (blocksDel[y][x] === 1 && (instance.playfield[yCoor][xCoor] === 0)) {
+      moveCursor('  ', yCoor + 3, xCoor + 24);
       console.log(`\x1b[${yCoor + 3};${xCoor + 24}H  `);
     }
   });
@@ -105,7 +107,7 @@ const showPiece = instance => {
     const yCoor = 3 + yActive + y;
     const xCoor = 24 + xActive + 2 * x;
     if (blocks[y][x] === 1) {  // виводить падаючу фігуру
-      console.log(`\x1b[${yCoor};${xCoor}H` + instance.activeShapeFigure);
+      moveCursor(instance.activeShapeFigure, yCoor, xCoor);
     }
   });
 };
@@ -119,7 +121,7 @@ eventEm.on('levelUp', (instance, func) => {
     clearInterval(instance.level.speedometer);
     func();
     instance.level.speedometer = setInterval(func, instance.level.speed);
-    console.log(`\x1b[14;56H ${instance.level.level}`);
+    moveCursor(instance.level.level, 14, 56);
   }
 });
 
@@ -130,7 +132,7 @@ eventEm.on('levelDown', (instance, func) => {
     clearInterval(instance.level.speedometer);
     func();
     instance.level.speedometer = setInterval(func, instance.level.speed);
-    console.log(`\x1b[14;56H ${instance.level.level}`);
+    moveCursor(instance.level.level, 14, 56);
   }
 });
 
@@ -184,7 +186,6 @@ class MovementsPiece {
     ));
   }
 
-  // Рух фігури вниз
   movePieceDown() {
     this.activePiece.y += 1;
     if (this.checkErrors()) {
@@ -193,21 +194,21 @@ class MovementsPiece {
     }
   }
 
-  movePieceRight() {  // Рух фігури вправо
+  movePieceRight() {
     this.activePiece.x += 2;
     if (this.checkErrors()) {
       this.activePiece.x -= 2;
     }
   }
 
-  movePieceLeft() {  // Рух фігури вліво
+  movePieceLeft() {
     this.activePiece.x -= 2;
     if (this.checkErrors()) {
       this.activePiece.x += 2;
     }
   }
 
-  turnPiece() {  // Поворот фігури на 90 градусів
+  turnPiece() {
     const blocks = this.activePiece.blocks;
     if (blocks === typeFigures[1]) return blocks;
     const newBlocks = [];
@@ -243,7 +244,7 @@ class MovementsPiece {
         this.score += 1;
         hideLoops(this, this.playfield, 2, showPassivePieces);
         count++;
-        console.log('\x1b[12;63H' + this.score);
+        moveCursor(this.score, 12, 63);
       }
     }
   }
@@ -276,9 +277,9 @@ class MovementsPiece {
       const yCoor = y + 5;
       const xCoor = 2 * x + 52;
       if (nextBlocks[y] && nextBlocks[y][x] === 1) {
-        console.log(`\x1b[${yCoor};${xCoor}H` + nextShape);
+        moveCursor(nextShape, yCoor, xCoor);
       } else {
-        console.log(`\x1b[${yCoor};${xCoor}H  `);
+        moveCursor('  ', yCoor, xCoor);
       }
     });
   }
@@ -325,7 +326,7 @@ const runGame = (reason = 'standart') => {
   } else if (reason === 'turnPiece') {
     tetra.turnPiece();
   }
-  console.log('\x1b[25;10H');
+  moveCursor('', 25, 10);
 };
 
 const runConsoleLogs = instance => {
@@ -333,13 +334,13 @@ const runConsoleLogs = instance => {
   showField();
   showFieldForNextFigure();
   instance.showNextPiece();
-  console.log('\x1b[32m\x1b[12;49H 🦍 SCORE 🦍  ' + instance.score);
-  console.log('\x1b[14;49H LEVEL  ' + instance.level.level);
-  console.log('\x1b[16;49H Arrows - Move figure');
-  console.log('\x1b[18;49H SPACE - Turn figure ');
-  console.log('\x1b[20;49H Escape - Pause (+|-) ');
-  console.log('\x1b[22;49H Shift + Up = Level+ ');
-  console.log('\x1b[24;49H Shift + Down = Level- \x1b[0m');
+  moveCursor(` 🦍 SCORE 🦍  ${instance.score}`, 12, 49);
+  moveCursor(` LEVEL  ${instance.level.level}`, 14, 49);
+  moveCursor(' Arrows - Move figure', 16, 49);
+  moveCursor(' Space - Turn figure', 18, 49);
+  moveCursor(' Escape - Pause (+|-)', 20, 49);
+  moveCursor(' Shift + Up = Level+', 22, 49);
+  moveCursor(' Shift + Down = Level-', 24, 49);
   instance.level.speedometer = setInterval(runGame, instance.level.speed);
 };
 
@@ -359,9 +360,9 @@ process.stdin.setRawMode(true);
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', c => {
   if (c === codeKeys['CTRL + C']) {
-    console.log('\x1b[31m \x1b[25;26H 🦍 GAME OVER 🦍 \x1b[0m');
-    console.log(`\x1b[33m \x1b[27;29H SCORE => ${tetra.score} \x1b[0m`);
-    console.log('\x1b[28;30H');
+    moveCursor(' 🦍 GAME OVER 🦍', 25, 26, 31);
+    moveCursor(` SCORE => ${tetra.score}`, 27, 29, 33);
+    moveCursor('', 28, 30);
     process.exit();
   }
   if (c === codeKeys['Space'] && (!tetra.pause)) {
