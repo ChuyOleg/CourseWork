@@ -3,6 +3,7 @@
 const extraFuncs = require('./extraConstructions.js');
 const { typeFigures, shapeFigures, colors } = require('./figures.js');
 const { createField, showField, showFieldForNextFigure } = require('./fields');
+const magic = require('./magicNumbersSymbols.js');
 
 const EventEmitter = extraFuncs.SimpleEventEmitter;
 const hideLoops = extraFuncs.hideLoops;
@@ -15,14 +16,16 @@ const randomTo4 = random.bind(null, 0, 4);
 // (чи накладається новостворена фігура на вже існуючу)
 const checkEndGame = instance => {
   const { x: checkX, y: checkY, blocks: checkBlocks } = instance.activePiece;
+  const { gameOver, score, emptyLine } = magic;
   hideLoops(instance, checkBlocks, 1, (instance, y, x) => {
     const yCoor = checkY + y;
     const xCoor = checkX + x * 2;
     if (checkBlocks[y][x] === 1 && instance.playfield[yCoor][xCoor] === 1) {
       console.clear();
-      moveCursor(' 🦍 GAME OVER 🦍', 18, 29, colors.red);
-      moveCursor(` SCORE => ${instance.score}`, 20, 32, colors.yellow);
-      moveCursor('', 28, 30);
+      moveCursor()
+        .write(' 🦍 GAME OVER 🦍', gameOver.y, gameOver.x, colors.red)
+        .write(` SCORE => ${instance.score}`, score.y, score.x, colors.yellow)
+        .write('', emptyLine.y, emptyLine.x);
       process.exit(0);
     }
   });
@@ -30,13 +33,14 @@ const checkEndGame = instance => {
 
 // виводить усі фігури в консолі, окрім падаючої
 const showPassivePieces = (instance, y, x) => {
-  const yCoor = y + 3;
-  const xCoor = x + 24;
+  const { indent } = magic;
+  const yCoor = y + indent.y;
+  const xCoor = x + indent.x;
   const color = instance.passiveFigCol['' + y + x];
   if (instance.playfield[y][x] === 1) {
-    moveCursor(color, yCoor, xCoor);
+    moveCursor().write(color, yCoor, xCoor);
   } else {
-    moveCursor('  ', yCoor, xCoor);
+    moveCursor().write('  ', yCoor, xCoor);
   }
 };
 
@@ -45,23 +49,23 @@ const showPiece = instance => {
   const { yDel, xDel } = instance.activePieceNeedClear;
   const { blocksDel } = instance.activePieceNeedClear;
   const { y: yActive, x: xActive, blocks } = instance.activePiece;
+  const { indent } = magic;
   hideLoops(instance, blocksDel, 1, (instance, y, x) => {
     const yCoor = yDel + y;
     const xCoor = xDel + 2 * x;
     // Стирає попереднє розташування
     if (blocksDel[y][x] === 1 && (instance.playfield[yCoor][xCoor] === 0)) {
-      moveCursor('  ', yCoor + 3, xCoor + 24);
-      console.log(`\x1b[${yCoor + 3};${xCoor + 24}H  `);
+      moveCursor().write('  ', yCoor + indent.y, xCoor + indent.x);
     }
   });
   instance.activePieceNeedClear.xDel = xActive;
   instance.activePieceNeedClear.yDel = yActive;
   instance.activePieceNeedClear.blocksDel = blocks;
   hideLoops(instance, blocks, 1, (instance, y, x) => {
-    const yCoor = 3 + yActive + y;
-    const xCoor = 24 + xActive + 2 * x;
+    const yCoor = indent.y + yActive + y;
+    const xCoor = indent.x + xActive + 2 * x;
     if (blocks[y][x] === 1) {  // виводить падаючу фігуру
-      moveCursor(instance.activeShapeFigure, yCoor, xCoor);
+      moveCursor().write(instance.activeShapeFigure, yCoor, xCoor);
     }
   });
 };
@@ -69,26 +73,32 @@ const showPiece = instance => {
 const eventEm = new EventEmitter();
 
 eventEm.on('levelUp', (instance, func) => {
+  const { levelNum } = magic;
   const objLevel = instance.level;
-  if (objLevel.speed > 150) {
-    objLevel.speed -= 50;
+  const speedDiff = 50;
+  const minSpeed = 150;
+  if (objLevel.speed > minSpeed) {
+    objLevel.speed -= speedDiff;
     objLevel.level += 1;
     clearInterval(objLevel.speedometer);
     func();
     objLevel.speedometer = setInterval(func, objLevel.speed);
-    moveCursor(objLevel.level, 14, 57);
+    moveCursor().write(objLevel.level, levelNum.y, levelNum.x);
   }
 });
 
 eventEm.on('levelDown', (instance, func) => {
+  const { levelNum } = magic;
   const objLevel = instance.level;
-  if (objLevel.speed < 500) {
-    objLevel.speed += 50;
+  const speedDiff = 50;
+  const maxSpeed = 500;
+  if (objLevel.speed < maxSpeed) {
+    objLevel.speed += speedDiff;
     objLevel.level -= 1;
     clearInterval(objLevel.speedometer);
     func();
     objLevel.speedometer = setInterval(func, objLevel.speed);
-    moveCursor(objLevel.level, 14, 57);
+    moveCursor().write(objLevel.level, levelNum.y, levelNum.x);
   }
 });
 
@@ -180,6 +190,7 @@ class MovementsPiece {
 
   // Видалення заповненого рядка
   deleteLine() {
+    const { scoreNum } = magic;
     const color = this.passiveFigCol;
     for (let count = this.playfield.length - 1; count >= 0; count--) {
       if (this.playfield[count].indexOf(0) === -1) {
@@ -200,7 +211,7 @@ class MovementsPiece {
         this.score += 1;
         hideLoops(this, this.playfield, 2, showPassivePieces);
         count++;
-        moveCursor(this.score, 12, 63);
+        moveCursor().write(this.score, scoreNum.y, scoreNum.x);
       }
     }
   }
@@ -208,6 +219,7 @@ class MovementsPiece {
   // Фіксує фігуру у полі, коли вона зайняла кінцеву позицію
   closePieceInField() {
     const { x: xActive, y: yActive, blocks } = this.activePiece;
+    const { startCoor } = magic;
     hideLoops(this, blocks, 1, (instance, y, x) => {
       if (blocks[y][x] === 1) {
         const keyCol = '' + (yActive + y) + (xActive + 2 * x);
@@ -221,8 +233,8 @@ class MovementsPiece {
     this.nextPiece.nextShape = shapeFigures[randomTo4()];
     this.nextPiece.nextBlocks = typeFigures[randomTo4()];
     this.showNextPiece();
-    this.activePiece.y = 0;
-    this.activePiece.x = 6;
+    this.activePiece.y = startCoor.y;
+    this.activePiece.x = startCoor.x;
     checkEndGame(this);
   }
 
@@ -233,9 +245,9 @@ class MovementsPiece {
       const yCoor = y + 5;
       const xCoor = 2 * x + 52;
       if (nextBlocks[y] && nextBlocks[y][x] === 1) {
-        moveCursor(nextShape, yCoor, xCoor);
+        moveCursor().write(nextShape, yCoor, xCoor);
       } else {
-        moveCursor('  ', yCoor, xCoor);
+        moveCursor().write('  ', yCoor, xCoor);
       }
     });
   }
@@ -258,7 +270,7 @@ const runGame = (reason = 'standart') => {
   } else if (reason === 'turnPiece') {
     tetra.turnPiece();
   }
-  moveCursor('', 25, 10);
+  moveCursor().write('', 25, 10);
 };
 
 const runConsoleLogs = instance => {
@@ -266,13 +278,15 @@ const runConsoleLogs = instance => {
   showField();
   showFieldForNextFigure();
   instance.showNextPiece();
-  moveCursor(` 🦍 SCORE 🦍  ${instance.score}`, 12, 49);
-  moveCursor(` LEVEL  ${instance.level.level}`, 14, 49);
-  moveCursor(' Arrows - Move figure', 16, 49);
-  moveCursor(' Space - Turn figure', 18, 49);
-  moveCursor(' Escape - Pause (+|-)', 20, 49);
-  moveCursor(' Shift + Up = Level+', 22, 49);
-  moveCursor(' Shift + Down = Level-', 24, 49);
+  const { scoreLine, levelLine, arrow, space, esc, shiftUp, shiftDown } = magic;
+  moveCursor()
+    .write(` 🦍 SCORE 🦍  ${instance.score}`, scoreLine.y, scoreLine.x)
+    .write(` LEVEL  ${instance.level.level}`, levelLine.y, levelLine.x)
+    .write(' Arrows - Move figure', arrow.y, arrow.x)
+    .write(' Space - Turn figure', space.y, space.x)
+    .write(' Escape - Pause (+|-)', esc.y, esc.x)
+    .write(' Shift + Up = Level+', shiftUp.y, shiftDown.x)
+    .write(' Shift + Down = Level-', shiftDown.y, shiftDown.x);
   instance.level.speedometer = setInterval(runGame, instance.level.speed);
 };
 
@@ -292,9 +306,11 @@ process.stdin.setRawMode(true);
 process.stdin.setEncoding('utf8');
 process.stdin.on('data', c => {
   if (c === codeKeys['CTRL + C']) {
-    moveCursor(' 🦍 GAME OVER 🦍', 25, 26, colors.red);
-    moveCursor(` SCORE => ${tetra.score}`, 27, 29, colors.yellow);
-    moveCursor('', 28, 30);
+    const { exGameOver, exScore, exEmptyLine } = magic;
+    moveCursor()
+      .write(' 🦍 GAME OVER 🦍', exGameOver.y, exGameOver.x, colors.red)
+      .write(` SCORE => ${tetra.score}`, exScore.y, exScore.x, colors.yellow)
+      .write('', exEmptyLine.y, exEmptyLine.x);
     process.exit();
   }
   if (c === codeKeys['Space'] && (!tetra.pause)) {
@@ -326,4 +342,5 @@ process.stdin.on('data', c => {
   }
 });
 
+// запуск
 runConsoleLogs(tetra);
