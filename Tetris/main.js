@@ -69,24 +69,26 @@ const showPiece = instance => {
 const eventEm = new EventEmitter();
 
 eventEm.on('levelUp', (instance, func) => {
-  if (instance.level.speed > 150) {
-    instance.level.speed -= 50;
-    instance.level.level += 1;
-    clearInterval(instance.level.speedometer);
+  const objLevel = instance.level;
+  if (objLevel.speed > 150) {
+    objLevel.speed -= 50;
+    objLevel.level += 1;
+    clearInterval(objLevel.speedometer);
     func();
-    instance.level.speedometer = setInterval(func, instance.level.speed);
-    moveCursor(instance.level.level, 14, 57);
+    objLevel.speedometer = setInterval(func, objLevel.speed);
+    moveCursor(objLevel.level, 14, 57);
   }
 });
 
 eventEm.on('levelDown', (instance, func) => {
-  if (instance.level.speed < 500) {
-    instance.level.speed += 50;
-    instance.level.level -= 1;
-    clearInterval(instance.level.speedometer);
+  const objLevel = instance.level;
+  if (objLevel.speed < 500) {
+    objLevel.speed += 50;
+    objLevel.level -= 1;
+    clearInterval(objLevel.speedometer);
     func();
-    instance.level.speedometer = setInterval(func, instance.level.speed);
-    moveCursor(instance.level.level, 14, 57);
+    objLevel.speedometer = setInterval(func, objLevel.speed);
+    moveCursor(objLevel.level, 14, 57);
   }
 });
 
